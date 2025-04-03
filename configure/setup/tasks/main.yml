@@ -1,0 +1,19 @@
+- name: "Set hostname to {{ configure_hostname }}"
+  become: true
+  ansible.builtin.hostname:
+    name: "{{ configure_hostname }}"
+    use: "{{ configure_target_os }}"
+
+- name: "whoami"
+  ansible.builtin.shell:
+    cmd: "whoami"
+
+- name: "Install Docker CE"
+  vars:
+    docker_install_compose: true
+    docker_edition: "ce"
+    docker_apt_filename: "docker"
+  ansible.builtin.include_role:
+    name: "geerlingguy.docker"
+    apply:
+      become: true

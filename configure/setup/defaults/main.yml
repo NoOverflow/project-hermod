@@ -1,0 +1,2 @@
+configure_hostname: "hermod-hub-one"
+configure_target_os: "debian"
