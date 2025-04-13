@@ -6,6 +6,10 @@ use log::{error, info};
 use rocket_okapi::{openapi_get_routes, swagger_ui::*};
 use routes::reboot::*;
 
+use gtk::prelude::*;
+use gtk::{glib, Application, ApplicationWindow};
+use gtk4 as gtk;
+
 mod context;
 mod middlewares;
 mod routes;
@@ -41,12 +45,12 @@ fn build_config() -> Result<Config, ()> {
     }
     Ok(Config {
         default_position: false,
-        api_key: env_api_key.unwrap()
+        api_key: env_api_key.unwrap(),
     })
 }
 
 #[rocket::main]
-async fn main() -> Result<(), ()> {
+async fn run_api() -> Result<(), ()> {
     if setup_logger().is_err() {
         eprintln!("Failed to setup logger, exiting.");
     }
@@ -63,12 +67,7 @@ async fn main() -> Result<(), ()> {
     info!("Starting moonscale server with context:");
 
     let launch_result = rocket::build()
-        .mount(
-            "/api",
-            openapi_get_routes![
-                route_reboot
-            ],
-        )
+        .mount("/api", openapi_get_routes![route_reboot])
         .mount(
             "/",
             make_swagger_ui(&SwaggerUIConfig {
@@ -84,4 +83,32 @@ async fn main() -> Result<(), ()> {
         Err(err) => println!("Rocket had an error: {}", err),
     };
     Ok(())
+}
+
+fn run_display() -> glib::ExitCode {
+    let app = Application::builder()
+        .application_id("org.example.HelloWorld")
+        .build();
+
+    app.connect_activate(|app| {
+        // We create the main window.
+        let window = ApplicationWindow::builder()
+            .application(app)
+            .default_width(320)
+            .default_height(200)
+            .title("Hello, World!")
+            .build();
+
+        // Show the window.
+        window.present();
+    });
+
+    app.run()
+}
+
+fn main() {
+    run_display();
+    if let Err(_) = run_api() {
+        error!("Failed to start the server.");
+    }
 }

@@ -22,3 +22,5 @@ time = { version = "0.3.34", features = ["serde", "macros"] }
 rand = "0.8.5"
 base64 = "0.22.0"
 num = "0.4.1"
+system_shutdown = "4.0.1"
+gtk4 = "0.9.6"
