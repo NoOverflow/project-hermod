@@ -4,10 +4,6 @@
     name: "{{ configure_hostname }}"
     use: "{{ configure_target_os }}"
 
-- name: "whoami"
-  ansible.builtin.shell:
-    cmd: "whoami"
-
 - name: "Install Docker CE"
   vars:
     docker_install_compose: true
@@ -17,3 +13,17 @@
     name: "geerlingguy.docker"
     apply:
       become: true
+
+- name: "Add to tailscale network"
+  vars:
+    tailscale_authkey: "{{ lookup('env', 'TAILSCALE_AUTH_KEY') }}"
+  ansible.builtin.include_role:
+    name: "artis3n.tailscale.device"
+    apply:
+      become: true
+
+- name: "Configure Prometheus node exporter"
+  vars:
+    node_exporter_web_listen_address: "{{ tailscale_node_ipv4 }}:9100"
+  ansible.builtin.include_role:
+    name: "prometheus.prometheus.node_exporter"
