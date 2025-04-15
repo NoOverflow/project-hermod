@@ -1,11 +1,14 @@
-use std::env;
+use std::sync::{Arc, Mutex};
+use std::{env, thread};
 
 use anyhow::Result;
-use context::Config;
+use context::{Config, SharedContext};
 use log::{error, info};
+use rocket::{futures, tokio};
 use rocket_okapi::{openapi_get_routes, swagger_ui::*};
 use routes::reboot::*;
 
+use futures::executor::block_on;
 use gtk::prelude::*;
 use gtk::{glib, Application, ApplicationWindow};
 use gtk4 as gtk;
@@ -49,19 +52,17 @@ fn build_config() -> Result<Config, ()> {
     })
 }
 
-#[rocket::main]
-async fn run_api() -> Result<(), ()> {
-    if setup_logger().is_err() {
-        eprintln!("Failed to setup logger, exiting.");
-    }
+#[tokio::main]
+async fn run_api(shared: Arc<Mutex<SharedContext>>) -> Result<(), ()> {
     let config = build_config();
 
     if config.is_err() {
         error!("Couldn't build configuration, check logs for error.");
         return Err(());
     }
-    let context = context::Context {
+    let context = context::ApiContext {
         config: config.unwrap(),
+        shared,
     };
 
     info!("Starting moonscale server with context:");
@@ -85,30 +86,32 @@ async fn run_api() -> Result<(), ()> {
     Ok(())
 }
 
-fn run_display() -> glib::ExitCode {
+fn run_display(shared: Arc<Mutex<SharedContext>>) -> glib::ExitCode {
     let app = Application::builder()
-        .application_id("org.example.HelloWorld")
+        .application_id("com.hermod.main")
         .build();
 
-    app.connect_activate(|app| {
-        // We create the main window.
+    shared.lock().unwrap().gtk_application = Some(app.clone());
+    app.connect_activate(|app: &Application| {
         let window = ApplicationWindow::builder()
             .application(app)
             .default_width(320)
             .default_height(200)
-            .title("Hello, World!")
+            .title("Hermod - Main display")
             .build();
 
-        // Show the window.
         window.present();
     });
-
     app.run()
 }
 
 fn main() {
-    run_display();
-    if let Err(_) = run_api() {
-        error!("Failed to start the server.");
+    let shared = Arc::new(Mutex::new(context::SharedContext::default()));
+    let api_context = shared.clone();
+
+    if setup_logger().is_err() {
+        eprintln!("Failed to setup logger, exiting.");
     }
+    thread::spawn(move || run_api(api_context));
+    run_display(shared.clone());
 }

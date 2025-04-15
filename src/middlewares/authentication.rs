@@ -9,7 +9,7 @@ use rocket_okapi::{
     request::{OpenApiFromRequest, RequestHeaderInput},
 };
 
-use crate::context::Context;
+use crate::context::ApiContext;
 
 pub struct ApiKey(String);
 
@@ -18,7 +18,7 @@ impl<'r> FromRequest<'r> for ApiKey {
     type Error = ();
 
     async fn from_request(request: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
-        let context = request.rocket().state::<Context>().unwrap();
+        let context = request.rocket().state::<ApiContext>().unwrap();
 
         match request.headers().get_one("Authorization") {
             None => Outcome::Error((Status::BadRequest, ())),
