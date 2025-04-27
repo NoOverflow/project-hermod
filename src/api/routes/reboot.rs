@@ -1,8 +1,10 @@
-use crate::middlewares::authentication::ApiKey;
+use middlewares::authentication::ApiKey;
 use gtk4::prelude::{GtkApplicationExt, GtkWindowExt};
 use rocket::{get, http::Status, State};
 use rocket_okapi::openapi;
 use system_shutdown::reboot;
+
+use crate::api::middlewares;
 
 /// # Reboot the controller
 ///
