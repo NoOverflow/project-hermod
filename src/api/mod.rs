@@ -34,7 +34,15 @@ fn get_listen_address(interface_name: &str, ipv6: bool) -> IpAddr {
     let network_interfaces = NetworkInterface::show().unwrap();
 
     match network_interfaces.into_iter().find(|itf| itf.name == interface_name) {
-        Some(int) => int.addr.get(if ipv6 {1} else {0}).unwrap().ip(),
+        Some(int) => {
+            let address = int.addr.get(if ipv6 {1} else {0});
+
+            if address.is_none() {
+                warn!("Couldn't find the address for the requested protocol on the interface. Using localhost instead.");
+                return IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1))
+            }
+            address.unwrap().ip()
+        },
         None => {
             warn!("Couldn't find interface {}, using localhost instead.", interface_name);
             IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1))

@@ -2406,6 +2406,7 @@ dependencies = [
  "system_shutdown",
  "tera",
  "time",
+ "tower-sanitize-path",
 ]
 
 [[package]]
@@ -3419,6 +3420,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "121c2a6cda46980bb0fcd1647ffaf6cd3fc79a013de288782836f6df9c48780e"
 
 [[package]]
+name = "tower-sanitize-path"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f8277387194ad48739f3516a54ef4486927ba53b8d889871f3715fb8f99f5aa"
+dependencies = [
+ "http",
+ "tower-layer",
+ "tower-service",
+ "url-escape",
+]
+
+[[package]]
 name = "tower-service"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3607,6 +3620,15 @@ name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
+
+[[package]]
+name = "url-escape"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44e0ce4d1246d075ca5abec4b41d33e87a6054d08e2366b63205665e950db218"
+dependencies = [
+ "percent-encoding",
+]
 
 [[package]]
 name = "valuable"
