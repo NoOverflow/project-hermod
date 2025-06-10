@@ -1,9 +1,10 @@
-use std::path::Path;
+use std::{fs, path::Path};
 
 use gtk4::{gdk_pixbuf::Pixbuf, glib::{self, ControlFlow}, prelude::{GtkApplicationExt, GtkWindowExt}};
 use middlewares::authentication::ApiKey;
 use rocket::{post, http::Status, State};
 use rocket_okapi::openapi;
+use tower_sanitize_path::SanitizePathLayer;
 
 use crate::api::middlewares;
 
@@ -30,12 +31,17 @@ fn load_image(file_path: &Path, window: &gtk4::ApplicationWindow) {
 #[openapi(tag = "Image")]
 #[post("/switch?<path>")]
 pub async fn route_image_switch(_context: &State<crate::context::ApiContext>, _key: ApiKey, path: &str) -> Status {
-    let path = std::path::PathBuf::from(path);
-    let mov_path = Box::leak(Box::new(path.clone()));
+    if path.contains("..") || path.contains("/") || path.contains("\\") {
+        return Status::Forbidden;
+    }
+
+    let mut built_path = std::path::PathBuf::from("./res/");
+    built_path.push(std::path::PathBuf::from(path));
+    let mov_path = Box::leak(Box::new(built_path.clone()));
     let mov_ctx = _context.shared.clone();
 
-    if !path.clone().exists() {
-        log::error!("Path does not exist: {}", path.display());
+    if !built_path.clone().exists() {
+        log::error!("Path does not exist: {}", built_path.display());
         return Status::NotFound;
     }
     glib::idle_add(move || {
