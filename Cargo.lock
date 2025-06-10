@@ -844,6 +844,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "file_type"
+version = "0.8.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd117e092a1038c71be6b6f2e092a9c71477c06c347458068b0ef494c9632807"
+dependencies = [
+ "phf",
+]
+
+[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2390,6 +2399,7 @@ dependencies = [
  "anyhow",
  "base64 0.22.1",
  "fern",
+ "file_type",
  "gtk4",
  "humantime",
  "k8s-openapi",

@@ -5,6 +5,7 @@ use middlewares::authentication::ApiKey;
 use rocket::{post, http::Status, State};
 use rocket_okapi::openapi;
 use tower_sanitize_path::SanitizePathLayer;
+use file_type::FileType;
 
 use crate::api::middlewares;
 
@@ -13,14 +14,31 @@ fn load_image(file_path: &Path, window: &gtk4::ApplicationWindow) {
 
     match pixbuf {
         Ok(pixbuf) => {
-            println!("Loaded image: {:?}", pixbuf);
+            log::info!("Loaded image: {:?}", pixbuf);
             window.set_child(Some(
                 &gtk4::Picture::for_pixbuf(&pixbuf)
             ));
         },
         Err(err) => {
-            eprintln!("Error loading image: {}", err);
+            log::error!("Error loading image: {}", err);
             return;
+        }
+    }
+}
+
+fn load_video(file_path: &Path, window: &gtk4::ApplicationWindow) {
+    window.set_child(Some(
+        &gtk4::Video::for_filename(Some(file_path))
+    ));
+}
+
+fn get_file_type(file_path: &Path) -> Option<FileType> {
+    let file_type: Result<&'static FileType, file_type::Error> = FileType::try_from_file(file_path);
+
+    match file_type {
+        Ok(ft) => Some(ft.clone()),
+        Err(_) => {
+            None
         }
     }
 }
@@ -48,14 +66,35 @@ pub async fn route_image_switch(_context: &State<crate::context::ApiContext>, _k
         match mov_ctx.lock() {
             Ok(mov_ctx) => {
                 if !mov_ctx.gtk_main_window.is_none() {
-                    load_image(mov_path, &(mov_ctx.gtk_main_window.clone().unwrap()));
-                    mov_path.clear();
-                    return ControlFlow::Break;
+                    match get_file_type(&mov_path) {
+                        Some(file_type) => {
+                            let extension = file_type.extensions().first().unwrap_or(&"unknown");
+
+                            log::info!("Switching display to: {}, type: {}", mov_path.display(), file_type.name());
+                            if ["jpg", "bmp"].contains(extension) {
+                                load_image(mov_path, &(mov_ctx.gtk_main_window.clone().unwrap()));
+                            } else if ["mp4", "m4v", "m4a", "f4v"].contains(extension) {
+                                load_video(mov_path, &(mov_ctx.gtk_main_window.clone().unwrap()));
+                            } else {
+                                log::error!("Unsupported file type: {}", extension);
+                                mov_path.clear();
+                                return ControlFlow::Break;
+                            }
+                            mov_path.clear();
+                            return ControlFlow::Break;
+                        },
+                        None => {
+                            log::error!("Unsupported file type for: {}", mov_path.display());
+                            return ControlFlow::Break;
+                        }
+                    }
                 }
+                mov_path.clear();
                 return ControlFlow::Continue;
             },
             Err(_) => {
                 log::error!("Failed to lock context");
+                mov_path.clear();
                 return ControlFlow::Continue;
             }
         }
